@@ -1,0 +1,164 @@
+<html>
+
+<head>
+<meta charset="utf-8">
+<script language="javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script language="javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
+<script language="javascript" src="ppm.js"></script>
+
+<title>registration - ppm</title>
+
+<script language="javascript">
+
+/////////////////////////////// SET THIS /////////////////////////
+var this_page_receiver = "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe";
+var this_page_rate = 900000;
+//////////////////////////////////////////////////////////////////
+
+$(function(){
+
+	$('#deposit_warning').hide();		
+	$('#page_status').hide();
+	$('#info_panel').hide();
+	$('#page').hide();
+	
+	ppm_init(function(addr, amount){
+		var msg = "pay " + amount + " to " + addr;
+		$('#last_message').html(msg);
+		console.log(msg);
+	}, function(addr, amount){
+		var msg = "cannot pay " + amount + " to " + addr;
+		$('#last_message').html(msg);
+		console.log(msg);
+	}).then(function(){
+		
+		ppm_set_allowance();
+		
+		var f;
+		f = function(){
+			if(!ppm_has_allowance()){
+				setTimeout(f, 1000);
+				return;
+			}
+			$('#message').html("Account created");
+			
+			$('#page_status').show();
+			$('#info_panel').show();
+			$('#page').show();
+			
+			ppm_navigate(this_page_receiver, this_page_rate);
+		}
+		f();
+	});		
+	
+	$('#this_page_receiver').html(this_page_receiver);
+	$('#this_page_rate').html(this_page_rate);
+	
+	setInterval(function(){
+		ppm_balance().then(function(val){
+			$('#edit_balance').val(val);
+			if(val==0 || val=='0x0')
+				$('#deposit_warning').show();
+			else
+				$('#deposit_warning').hide();
+		});
+
+		var receiver = ppm_receiver();
+		$('#edit_receiver').val(receiver);
+		$('#edit_rate').val(ppm_rate());
+		if(receiver)
+			myweb3.eth.getBalance(receiver).then(function(res){$('#edit_receiver_balance').val(res);});		
+		
+	}, 1000);
+	
+	$('#btn_deposit').click(function(){
+		var amount = +$('#edit_amount').val();
+		if(!amount)
+			return;
+		amount *= 1e+18;
+		ppm_deposit(amount);
+	});
+});
+</script>
+
+<style type="text/css">
+#message{
+	font-size: 300%;
+}
+#this_page_receiver, #this_page_rate{
+	font-weight: bold;
+	font-face: courier;
+	border: 1px solid gray;
+}
+#info_panel {
+	display:block;
+	position: fixed;
+	top: 0px;
+	right: 0px;
+	border: 1px solid black;
+	padding: 1em;
+	background-color: white;
+}
+#deposit_warning{
+	color: red;
+	font-size: 200%;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="message">
+This is a "registratrion" page.
+Please confirm creation of your account.
+</div>
+
+<div id="page">
+Stay on this page to give some Ether to its owner!
+</br>
+</br>
+
+You may wish to go to:
+<ul>
+<li><a href="http://ppm-site1.surge.sh">site1</a></li>
+<li><a href="http://ppm-site2.surge.sh">site2</a></li>
+</ul>
+
+</div>
+
+<div id="page_status">
+<hr/>
+
+This page receiver is <span id="this_page_receiver"></span>
+<br/>
+This page rate is <span id="this_page_rate"></span> wei/min
+</div>
+
+<div id="info_panel">
+
+Current receiver:
+<input id="edit_receiver" value=""></input> @
+<input id="edit_rate" value=""></input> wei per minute
+<br/>
+Now has: <input id="edit_receiver_balance" value=""></input> wei
+<br/>
+
+<b>Your deposit:</b>
+<input id="edit_balance" value=""></input> wei
+<br/>
+
+Last payment:<br/>
+<span id="last_message">None</span>
+<br/>
+
+<button id="btn_deposit">Deposit more:</button> <input id="edit_amount" value="0.1"></input> wei
+<br/>
+
+<div id="deposit_warning">Please deposit some ETH!</div>
+
+</div>
+
+</body>
+
+</html>
